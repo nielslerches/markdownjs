@@ -1,0 +1,11 @@
+h1 input,
+p textarea {
+  all: inherit;
+  resize: none;
+  width: 400px;
+  overflow: hidden;
+  word-wrap: break-word;
+  hyphens: auto;
+  text-align: justify;
+  text-justify: newspaper;
+}
