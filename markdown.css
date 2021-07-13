@@ -1,20 +1,29 @@
 body {
-  font-size: 16px;
+  font: 16px monospace;
 }
 
-p {
+.md-component > * {
+  max-width: 90ch;
+  width: 100%;
+}
+
+.md-component * * {
+  all: inherit;
+}
+.md-paragraph {
+  font-size: 1rem;
+  line-height: 1.5rem;
   text-align: justify;
   text-justify: newspaper;
 }
 
-h1 input,
-p textarea {
-  all: inherit;
-}
-
-p textarea {
+.md-paragraph textarea {
   resize: none;
   overflow: hidden;
   word-wrap: break-word;
   hyphens: auto;
+}
+
+.md-header {
+  max-width: calc(89 * 9px);
 }

@@ -1,220 +1,256 @@
 const Markdown = (() => {
-  class Event {
-    constructor() {
-      this.listeners = [];
-    }
+  // Import stylesheets
 
-    addListener(listener) {
-      this.listeners.push(listener);
-    }
+// Write Javascript code!
+const container = document.getElementById('container');
 
-    trigger(params) {
-      this.listeners.forEach((listener) => {
-        listener(params);
-      });
+class EventEmitter {
+  constructor() {
+    const delegate = document.createDocumentFragment();
+    for (const f of [
+      'addEventListener',
+      'dispatchEvent',
+      'removeEventListener'
+    ]) {
+      this[f] = (...xs) => delegate[f](...xs);
     }
   }
+}
 
-  class MdDocument {
-    constructor() {
-      this.elements = [];
-      this.nextId = 0;
-
-      this.headerElementAdded = new Event();
-      this.paragraphElementAdded = new Event();
-
-      this.paragraphElementChanged = new Event();
+class Component extends EventEmitter {
+  render() {
+    let element = this.element;
+    if (!element) {
+      element = this.element = document.createElement('div');
+      element.className = 'md-component';
+      element.component = this;
     }
 
-    getNextId() {
-      return `md-element-${this.nextId++}`;
-    }
+    return element;
+  }
 
-    addHeaderElement(level) {
-      const id = this.getNextId();
-      const element = {
-        id,
-        type: "header",
-        text: "",
-        level,
-      };
-      this.elements.push(element);
-      this.headerElementAdded.trigger(element);
-    }
+  onChange() {
+    this.dispatchEvent(new CustomEvent('change', { detail: this }));
+  }
 
-    addParagraphElement(after) {
-      const id = this.getNextId();
-      const element = {
-        id,
-        type: "paragraph",
-        text: "",
-      };
+  get previousComponent() {
+    if (this.element.previousSibling)
+      return this.element.previousSibling.component;
+    return null;
+  }
 
-      if (after === undefined) {
-        this.elements.push(element);
-      } else {
-        const index = this.elements.findIndex(
-          (element) => element.id === after
-        );
-        this.elements.splice(index + 1, 0, element);
+  get nextComponent() {
+    if (this.element.nextSibling) return this.element.nextSibling.component;
+    return null;
+  }
+}
+
+class Header extends Component {
+  constructor(level, text) {
+    super();
+    this._level = level;
+    this._text = text;
+
+    this.placeholder = 'Hello, World!';
+  }
+
+  set level(value) {
+    this._level = value;
+    this.onChange();
+  }
+
+  get level() {
+    return this._level;
+  }
+
+  set text(value) {
+    this._text = value;
+    this.onChange();
+  }
+
+  get text() {
+    return this._text;
+  }
+
+  render() {
+    const element = super.render();
+
+    const header = (this.header = document.createElement(`h${this.level}`));
+    header.className = 'md-header';
+
+    const input = (this.input = document.createElement('input'));
+    input.value = this.text;
+    input.placeholder = this.placeholder;
+    input.oninput = e => {
+      e.preventDefault();
+      this.text = e.target.value;
+    };
+    input.onkeypress = e => {
+      switch (e.key) {
+        case 'Enter':
+          e.preventDefault();
+          let nextComponent = this.nextComponent;
+          if (nextComponent && nextComponent.focus) {
+            nextComponent.focus();
+          }
+          break;
+        default:
+          break;
       }
+    };
 
-      this.paragraphElementAdded.trigger({ after, ...element });
-    }
+    header.appendChild(input);
+    element.appendChild(header);
 
-    changeParagraphElement({ id, text }) {
-      const element = this.elements.find((element) => element.id === id);
-      element.text = text;
-      this.paragraphElementChanged.trigger(text);
-    }
+    return element;
   }
 
-  class MdView {
-    constructor(container) {
-      this.container = container;
-
-      this.headerButtonClick = new Event();
-      this.headerElementChanged = new Event();
-
-      this.paragraphButtonClick = new Event();
-      this.paragraphElementChanged = new Event();
-      this.paragraphElementEnterPressed = new Event();
-    }
-
-    render() {
-      this.buttons = document.createElement("div");
-
-      // Header H1
-      this.headerButton = document.createElement("button");
-      this.headerButton.innerText = "H1";
-      this.headerButton.onclick = (e) => {
-        this.headerButtonClick.trigger(1);
-      };
-      this.buttons.appendChild(this.headerButton);
-
-      // Paragraph
-      this.paragraphButton = document.createElement("button");
-      this.paragraphButton.innerText = "P";
-      this.paragraphButton.onclick = (e) => {
-        this.paragraphButtonClick.trigger();
-      };
-      this.buttons.appendChild(this.paragraphButton);
-
-      this.container.appendChild(this.buttons);
-
-      this.display = document.createElement("div");
-      this.container.appendChild(this.display);
-    }
-
-    headerElementAdded({ id, text, level }) {
-      const element = document.createElement(`h${level}`);
-      element.id = id;
-      element.className = "md-element";
-      const input = document.createElement("input");
-      input.value = text;
-      input.placeholder = "# Header H1";
-      input.oninput = (e) => {
-        this.headerElementChanged.trigger({ id, text: e.target.value });
-      };
-      element.appendChild(input);
-
-      this.display.appendChild(element);
-      input.focus();
-
-      return element;
-    }
-
-    paragraphElementAdded({ id, text, after }) {
-      function resize(text) {
-        input.rows = Math.ceil(text.length / cols);
+  onChange() {
+    if (this.header.tagName.toLowerCase() != `h${this.level}`) {
+      while (this.element.firstChild) {
+        this.element.removeChild(this.element.firstChild);
       }
+      this.render();
+    }
+    this.input.value = this.text;
+    super.onChange();
+  }
 
-      const cols = 80;
-      const placeholder =
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
+  focus() {
+    if (this.input) this.input.focus();
+  }
+}
 
-      const element = document.createElement(`p`);
-      element.id = id;
-      element.className = "md-element";
+class Paragraph extends Component {
+  constructor(text) {
+    super();
+    this._text = text;
 
-      const input = document.createElement("textarea");
-      input.style.width = `${cols}ch`;
-      input.value = text;
-      input.placeholder = placeholder;
-      resize(input.placeholder);
+    this.placeholder =
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.';
+    this.columns = 90;
+  }
 
-      input.oninput = (e) => {
-        const text = e.target.value;
-        resize(text);
-        if (!text) {
-          input.placeholder = placeholder;
-          resize(placeholder);
-        }
+  set text(value) {
+    this._text = value;
+    this.onChange();
+  }
 
-        this.paragraphElementChanged.trigger({ id, text });
-      };
-      input.onkeypress = (e) => {
-        switch (e.key) {
-          case "Enter":
-            e.preventDefault();
-            this.paragraphElementEnterPressed.trigger({ id });
-            break;
-        }
-      };
-      element.appendChild(input);
+  get text() {
+    return this._text;
+  }
 
-      if (after === undefined) {
-        this.display.appendChild(element);
-      } else {
-        this.display.insertBefore(
-          element,
-          this.display.querySelector(`#${after}`).nextSibling
-        );
+  render() {
+    const element = super.render();
+
+    const paragraph = (this.paragraph = document.createElement('p'));
+    paragraph.className = 'md-paragraph';
+
+    const input = (this.input = document.createElement('textarea'));
+    input.value = this.text;
+    input.placeholder = this.placeholder;
+    input.oninput = e => {
+      e.preventDefault();
+      this.text = e.target.value;
+    };
+    input.onkeypress = e => {
+      switch (e.key) {
+        case 'Enter':
+          e.preventDefault();
+          let nextComponent = this.nextComponent;
+          if (!nextComponent) {
+            nextComponent = new Paragraph('');
+            this.dispatchEvent(
+              new CustomEvent('create', { detail: nextComponent })
+            );
+            if (nextComponent.focus) {
+              nextComponent.focus();
+            }
+          }
+          break;
       }
+    };
 
-      input.focus();
+    paragraph.appendChild(input);
+    element.appendChild(paragraph);
 
-      return element;
+    this.resize();
+
+    return element;
+  }
+
+  onChange() {
+    this.input.value = this.text;
+    this.resize();
+    super.onChange();
+  }
+
+  resize() {
+    if (this.resizeTask) {
+      this.resizeTask = cancelIdleCallback(this.resizeTask);
+    }
+
+    const callback = () => {
+      this.input.rows = Math.ceil(
+        (this.input.value ? this.input.value : this.input.placeholder).length /
+          this.columns
+      );
+      this.resizeTask = null;
+    };
+
+    this.resizeTask = requestIdleCallback(callback, { timeout: 250 });
+  }
+
+  focus() {
+    if (this.input) {
+      this.input.focus();
+    }
+  }
+}
+
+class Editor {
+  constructor(container) {
+    this.container = container;
+
+    this._render = false;
+    this.components = [new Header(1, ''), new Paragraph('')];
+    this.addEventListeners();
+    this.render();
+  }
+
+  addEventListeners() {
+    for (const component of this.components) {
+      this.addComponentEventListeners(component);
     }
   }
 
-  class MdController {
-    constructor(container) {
-      this.document = new MdDocument();
-      this.view = new MdView(container);
-
-      this.view.headerButtonClick.addListener((level) => {
-        this.document.addHeaderElement(level);
-      });
-      this.document.headerElementAdded.addListener((element) => {
-        this.view.headerElementAdded(element);
-      });
-
-      this.view.paragraphButtonClick.addListener(() => {
-        this.document.addParagraphElement();
-      });
-      this.document.paragraphElementAdded.addListener((element) => {
-        this.view.paragraphElementAdded(element);
-      });
-
-      this.view.paragraphElementEnterPressed.addListener(({ id }) => {
-        this.document.addParagraphElement(id);
-      });
-    }
-
-    run() {
-      this.view.render();
-    }
+  addComponentEventListeners(component) {
+    component.addEventListener('create', this.onComponentCreate);
   }
 
-  class MdEditor {
-    constructor(container) {
-      const controller = new MdController(container);
-      controller.run();
-    }
-  }
-
-  return {
-    MdEditor,
+  onComponentCreate = ({ detail }) => {
+    this.appendComponent(detail);
   };
+
+  appendComponent(component) {
+    this.components.push(component);
+    if (this._render) {
+      this.container.appendChild(component.render());
+      this.addComponentEventListeners(component);
+    }
+  }
+
+  render() {
+    this._render = true;
+
+    for (const component of this.components) {
+      this.container.appendChild(component.render());
+    }
+  }
+}
+
+return {
+  Editor
+};
+
 })();
