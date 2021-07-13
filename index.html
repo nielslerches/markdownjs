@@ -12,9 +12,9 @@
     <script src="markdown.js"></script>
     <script>
         (() => {
+            const { MdEditor } = Markdown;
             const container = document.getElementById("markdown");
-            const controller = new MdController(container);
-            controller.run();
+            const controller = new MdEditor(container);
         })();
     </script>
 </body>

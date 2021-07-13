@@ -1,11 +1,20 @@
+body {
+  font-size: 16px;
+}
+
+p {
+  text-align: justify;
+  text-justify: newspaper;
+}
+
 h1 input,
 p textarea {
   all: inherit;
+}
+
+p textarea {
   resize: none;
-  width: 400px;
   overflow: hidden;
   word-wrap: break-word;
   hyphens: auto;
-  text-align: justify;
-  text-justify: newspaper;
 }
