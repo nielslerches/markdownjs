@@ -18,10 +18,12 @@ const Markdown = (() => {
   }
 
   class Component extends EventEmitter {
-    render() {
+    render(tagName = undefined) {
       let element = this.element;
       if (!element) {
-        element = this.element = document.createElement("div");
+        element = this.element = document.createElement(
+          tagName ? tagName : "div"
+        );
         element.className = "md-component";
         element.component = this;
       } else {
@@ -270,6 +272,12 @@ const Markdown = (() => {
       }
       super.onChange();
     }
+
+    focus() {
+      if (this.items.length > 0) {
+        this.items[0].focus();
+      }
+    }
   }
 
   class ListItem extends Component {
@@ -298,10 +306,13 @@ const Markdown = (() => {
       return this._text;
     }
 
+    get placeholder() {
+      return `Item ${this.list.items.findIndex((item) => item === this) + 1}`;
+    }
+
     render() {
-      const item = (this.item = this.element = document.createElement("li"));
-      item.className = "md-component md-list-item";
-      item.component = this;
+      const element = super.render("li");
+      element.classList.add("md-list-item");
 
       const input = (this.input = document.createElement("input"));
       input.value = this.text;
@@ -311,14 +322,18 @@ const Markdown = (() => {
         this.text = e.target.value;
       };
 
-      item.appendChild(input);
+      element.appendChild(input);
 
-      return this.element;
+      return element;
     }
 
     onChange() {
       if (this.input) this.input.value = this.text;
       super.onChange();
+    }
+
+    focus() {
+      if (this.input) this.input.focus();
     }
   }
 
