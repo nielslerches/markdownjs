@@ -7,9 +7,6 @@ body {
   width: 100%;
 }
 
-.md-component * * {
-  all: inherit;
-}
 .md-paragraph {
   font-size: 1rem;
   line-height: 1.5rem;
@@ -18,6 +15,7 @@ body {
 }
 
 .md-paragraph textarea {
+  all: inherit;
   resize: none;
   overflow: hidden;
   word-wrap: break-word;
@@ -26,4 +24,14 @@ body {
 
 .md-header {
   max-width: calc(89 * 9px);
+}
+
+.md-header input {
+  all: inherit;
+}
+
+.md-list-item input {
+  all: inherit;
+  display: inline;
+  width: 100%;
 }

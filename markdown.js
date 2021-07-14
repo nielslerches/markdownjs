@@ -24,6 +24,10 @@ const Markdown = (() => {
         element = this.element = document.createElement("div");
         element.className = "md-component";
         element.component = this;
+      } else {
+        while (element.firstChild) {
+          element.removeChild(element.firstChild);
+        }
       }
 
       return element;
@@ -224,6 +228,100 @@ const Markdown = (() => {
     }
   }
 
+  class UnorderedList extends Component {
+    constructor(items = []) {
+      super();
+
+      this._items = items;
+
+      // Bind items to list
+      for (const item of items) {
+        item.list = this;
+      }
+    }
+
+    set items(value) {
+      this._items = value;
+      this.onChange();
+    }
+
+    get items() {
+      return this._items;
+    }
+
+    render() {
+      const element = super.render();
+
+      const list = (this.list = document.createElement("ul"));
+      list.className = "md-unordered-list";
+
+      for (const item of this.items) {
+        list.appendChild(item.render());
+      }
+
+      element.appendChild(list);
+
+      return element;
+    }
+
+    onChange() {
+      while (this.list.firstChild) {
+        this.list.removeChild(this.list.firstChild);
+      }
+      super.onChange();
+    }
+  }
+
+  class ListItem extends Component {
+    constructor(list, text = "") {
+      super();
+
+      this.list = list;
+      this._text = text;
+    }
+
+    set list(value) {
+      this._list = value;
+      this.onChange();
+    }
+
+    get list() {
+      return this._list;
+    }
+
+    set text(value) {
+      this._text = value;
+      this.onChange();
+    }
+
+    get text() {
+      return this._text;
+    }
+
+    render() {
+      const item = (this.item = this.element = document.createElement("li"));
+      item.className = "md-component md-list-item";
+      item.component = this;
+
+      const input = (this.input = document.createElement("input"));
+      input.value = this.text;
+      input.placeholder = this.placeholder;
+      input.oninput = (e) => {
+        e.preventDefault();
+        this.text = e.target.value;
+      };
+
+      item.appendChild(input);
+
+      return this.element;
+    }
+
+    onChange() {
+      if (this.input) this.input.value = this.text;
+      super.onChange();
+    }
+  }
+
   class Editor {
     constructor(container) {
       this.container = container;
@@ -232,6 +330,7 @@ const Markdown = (() => {
       this.components = [];
 
       this.appendComponent(new Header(1, ""));
+      this.appendComponent(new UnorderedList([new ListItem()]));
     }
 
     addComponentEventListeners(component) {
