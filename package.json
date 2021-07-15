@@ -1,0 +1,31 @@
+{
+  "name": "markdownjs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/markdown.cjs.js",
+  "module": "dist/markdown.esm.js",
+  "browser": "dist/markdown.umd.js",
+  "dependencies": {
+    "rollup": "^2.53.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "pretest": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nielslerches/markdownjs.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nielslerches/markdownjs/issues"
+  },
+  "homepage": "https://github.com/nielslerches/markdownjs#readme"
+}
