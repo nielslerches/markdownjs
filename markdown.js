@@ -239,6 +239,7 @@ const Markdown = (() => {
       // Bind items to list
       for (const item of items) {
         item.list = this;
+        this.addComponentEventListeners(item);
       }
     }
 
@@ -278,23 +279,41 @@ const Markdown = (() => {
         this.items[0].focus();
       }
     }
+
+    addComponentEventListeners(component) {
+      component.addEventListener("create", this.onComponentCreate);
+    }
+
+    onComponentCreate = ({
+      detail: { referenceComponent, newComponent, callback },
+    }) => {
+      this.insertComponentAfter(referenceComponent, newComponent, callback);
+    };
+
+    insertComponentAfter(
+      referenceComponent,
+      newComponent,
+      callback = undefined
+    ) {
+      const refenceComponentIndex = this.items.findIndex(
+        (component) => component === referenceComponent
+      );
+      this.items.splice(refenceComponentIndex + 1, 0, newComponent);
+      newComponent.list = referenceComponent.list;
+      this.addComponentEventListeners(newComponent);
+      referenceComponent.element.parentNode.insertBefore(
+        newComponent.render(),
+        referenceComponent.element.nextSibling
+      );
+      callback && callback(newComponent);
+    }
   }
 
   class ListItem extends Component {
-    constructor(list, text = "") {
+    constructor(text = "") {
       super();
 
-      this.list = list;
       this._text = text;
-    }
-
-    set list(value) {
-      this._list = value;
-      this.onChange();
-    }
-
-    get list() {
-      return this._list;
     }
 
     set text(value) {
@@ -320,6 +339,26 @@ const Markdown = (() => {
       input.oninput = (e) => {
         e.preventDefault();
         this.text = e.target.value;
+      };
+      input.onkeypress = (e) => {
+        switch (e.key) {
+          case "Enter":
+            e.preventDefault();
+            let nextComponent = this.nextComponent;
+            if (!nextComponent) {
+              nextComponent = new ListItem();
+              this.dispatchEvent(
+                new CustomEvent("create", {
+                  detail: {
+                    newComponent: nextComponent,
+                    referenceComponent: this,
+                    callback: (newComponent) => newComponent.focus(),
+                  },
+                })
+              );
+            }
+            break;
+        }
       };
 
       element.appendChild(input);
